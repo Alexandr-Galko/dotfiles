@@ -59,17 +59,21 @@ set wildignore+=.git,*.o,*.pyc,.DS_Store
 " chars for fill statuslines and vertical separators
 set fillchars=vert:\ ,fold:-
 
+
+colorscheme molokai
+
 " these settings are only for gvim
 if has("gui_running")
 	set guioptions-=T   " turn off toolbar
 	set guioptions-=rL  " turn off scrolls (both right and left)
 
 	" font setup
-	set guifont=Menlo:h14
+	set guifont=Menlo:h12
 
+	
 	" try to setup colorsheme
 	try
-		colorscheme solarized
+		colorscheme molokai
 		" reload 'mark' plugin after colorscheme changed
 		if filereadable($HOME."/.vim/plugin/mark.vim")
 			source ~/.vim/plugin/mark.vim

@@ -9,6 +9,8 @@ PATH=/usr/local/bin:$PATH
 PATH=/usr/local/sbin:$PATH
 PATH=/usr/local/mysql/bin:$PATH
 
+export LC_ALL=ru_RU.UTF-8
+
 # don't put duplicate lines in the history
 export HISTCONTROL=ignoreboth,erasedups
 # set history length
@@ -162,9 +164,9 @@ fi
 export GREP_OPTIONS="--color=auto"
 
 # bash completion
-if [ -f `brew --prefix`/etc/bash_completion ]; then
-	. `brew --prefix`/etc/bash_completion
-fi
+#if [ -f `brew --prefix`/etc/bash_completion ]; then
+#	. `brew --prefix`/etc/bash_completion
+#fi
 
 # bash aliases
 if [ -f ~/.bash_aliases ]; then
