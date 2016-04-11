@@ -1,0 +1,88 @@
+# ls aliases
+#alias ls='ls -G --color=auto'
+alias ll='ls -l'
+alias la='ls -lA'
+
+# git aliaces
+alias gtree='git log --graph --full-history --all --color --pretty=format:"%x1b[33m%h%x09%x09%x1b[32m%d%x1b[0m %x1b[34m%an%x1b[0m   %s" "$@"'
+
+# pwd and cd aliases
+alias .='pwd'
+alias ..='cd ..'
+alias ...='cd ../..'
+
+# mkdir
+md() { mkdir -p "$@" && cd "$@"; }
+
+# exit
+alias q='logout'
+alias :q='logout'
+
+alias reload='source ~/.bash_profile'
+
+# other
+div() {
+	local columns=$(($(tput cols) - 8))
+	local line=$(printf '%0.1s' "-"{1..500})
+	printf "\e[01;31m---- 8< ${line:0:${columns}}\e[0m\n"
+}
+
+function extract () {
+    if [ -f $1 ] ; then
+        local dir_name=${1%.*}    # get the filename without extension.
+        # This was mainly for zip files.
+        case $1 in
+            *.tar.bz2)  tar xjf           $1 ;;                             
+            *.tar.gz)   tar xzf           $1 ;;                              
+            *.tar.xz)   tar Jxvf          $1 ;;                              
+            *.tar)      tar xf            $1 ;;                          
+            *.tbz2)     tar xjf           $1 ;;                        
+            *.tgz)      tar xzf           $1 ;;                         
+            *.bz2)      bunzip2           $1 ;;                         
+            *.rar)      unrar x           $1 ;;                           
+            *.gz)       gunzip            $1 ;;                           
+            *.zip)      unzip -d$dir_name $1 ;;                           
+            *.Z)        uncompress        $1 ;;                                
+            *)          echo "'$1' cannot be extracted via extract()" ;; 
+        esac
+    else
+        echo "'$1' is not a valid file"
+    fi
+}
+
+# Image width
+function width () {
+  echo $(sips -g pixelWidth $1 | grep -oE "[[:digit:]]{1,}$")
+}
+
+# Image height
+function height () {
+  echo $(sips -g pixelHeight $1 | grep -oE "[[:digit:]]{1,}$")
+}
+
+# Syntax-highlight JSON strings or files
+function json() {
+    if [ -p /dev/stdin ]; then
+        # piping, e.g. `echo '{"foo":42}' | json`
+        python -mjson.tool | pygmentize -l javascript
+    else
+        # e.g. `json '{"foo":42}'`
+        python -mjson.tool <<< "$*" | pygmentize -l javascript
+    fi
+}
+
+
+# take this repo and copy it to somewhere else minus the .git stuff.
+function gitexport(){
+    mkdir -p "$1"
+    git archive master | tar -x -C "$1"
+}
+
+
+#help alias
+alias bashhelp='echo comands /n ls=ls -G --color=auto /n '
+
+#
+alias rw='mount -o remount,rw /'
+alias ro='mount -o remount,ro /'
+alias umountvar='service startarm stop && service rsysylog stop && service dbus stop && umount -f /var'
