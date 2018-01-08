@@ -1,178 +1,128 @@
-# ~/.bashrc: executed by bash(1) for non-login shells. see /usr/share/doc/bash/examples/startup-files (in the package bash-doc) for examples
+# ~/.bashrc: executed by bash(1) for non-login shells.
+# see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
+# for examples
 
 # If not running interactively, don't do anything
 [ -z "$PS1" ] && return
+
+#отключаю спящий режим в консоли
+#setterm -blank 0
 
 # add local bin path
 PATH=$HOME/.bin:$PATH
 PATH=/usr/local/bin:$PATH
 PATH=/usr/local/sbin:$PATH
-PATH=/usr/local/mysql/bin:$PATH
 
-export LC_ALL=ru_RU.UTF-8
-
-# don't put duplicate lines in the history
-export HISTCONTROL=ignoreboth,erasedups
-# set history length
-HISTFILESIZE=1000000000
-HISTSIZE=1000000
+# don't put duplicate lines or lines starting with space in the history.
+# See bash(1) for more options
+HISTCONTROL=ignoreboth,erasedups
 
 # append to the history file, don't overwrite it
 shopt -s histappend
-# check the window size after each command and, if necessary, update the values of LINES and COLUMNS.
+
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=1000000
+HISTFILESIZE=1000000000
+
+# Make some commands not show up in history
+HISTIGNORE="ls:cd:cd -:pwd:exit:date:* --help"
+
+# check the window size after each command and, if necessary,
+# update the values of LINES and COLUMNS.
 shopt -s checkwinsize
 # correct minor errors in the spelling of a directory component in a cd command
 shopt -s cdspell
 # save all lines of a multiple-line command in the same history entry (allows easy re-editing of multi-line commands)
 shopt -s cmdhist
 
-# setup color variables
-color_is_on=
-color_red=
-color_green=
-color_yellow=
-color_blue=
-color_white=
-color_gray=
-color_bg_red=
-color_off=
-color_user=
-if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
-	color_is_on=true
-	color_red="\[$(/usr/bin/tput setaf 1)\]"
-	color_green="\[$(/usr/bin/tput setaf 2)\]"
-	color_yellow="\[$(/usr/bin/tput setaf 3)\]"
-	color_blue="\[$(/usr/bin/tput setaf 6)\]"
-	color_white="\[$(/usr/bin/tput setaf 7)\]"
-	color_gray="\[$(/usr/bin/tput setaf 8)\]"
-	color_off="\[$(/usr/bin/tput sgr0)\]"
 
-	color_error="$(/usr/bin/tput setab 1)$(/usr/bin/tput setaf 7)"
-	color_error_off="$(/usr/bin/tput sgr0)"
+# Make vim the default editor
+export EDITOR="vim"
+# Don’t clear the screen after quitting a manual page
+export MANPAGER="less -X"
+# Highlight section titles in manual pages
+export LESS_TERMCAP_md="$color_orange"
 
-	# set user color
-	case `id -u` in
-		0) color_user=$color_red ;;
-		*) color_user=$color_green ;;
-	esac
+# set a fancy prompt (non-color, unless we know we "want" color)
+case "$TERM" in
+    xterm-color) color_prompt=yes;;
+esac
+
+# uncomment for a colored prompt, if the terminal has the capability; turned
+# off by default to not distract the user: the focus in a terminal window
+# should be on the output of commands, not on the prompt
+force_color_prompt=yes
+
+if [ -n "$force_color_prompt" ]; then
+    if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
+	# We have color support; assume it's compliant with Ecma-48
+	# (ISO/IEC-6429). (Lack of such support is extremely rare, and such
+	# a case would tend to support setf rather than setaf.)
+	color_prompt=yes
+    else
+	color_prompt=
+    fi
 fi
 
-# some kind of optimization - check if git installed only on config load
-PS1_GIT_BIN=$(which git 2>/dev/null)
+if [ "$color_prompt" = yes ]; then
+    PS1='${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u@\h\[\033[00m\]:\[\033[01;34m\]\w\[\033[00m\]\$ '
+else
+    PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
+fi
+unset color_prompt force_color_prompt
 
-function prompt_command {
-	local PS1_GIT=
-	local PS1_VENV=
-	local GIT_BRANCH=
-	local GIT_DIRTY=
-	local PWDNAME=$PWD
+# If this is an xterm set the title to user@host:dir
+case "$TERM" in
+xterm*|rxvt*)
+    PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
+    ;;
+*)
+    ;;
+esac
 
-	# beautify working directory name
-	if [[ "${HOME}" == "${PWD}" ]]; then
-		PWDNAME="~"
-	elif [[ "${HOME}" == "${PWD:0:${#HOME}}" ]]; then
-		PWDNAME="~${PWD:${#HOME}}"
-	fi
+# enable color support of ls and also add handy aliases
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    alias dir='dir --color=auto'
+    alias vdir='vdir --color=auto'
 
-	# parse git status and get git variables
-	if [[ ! -z $PS1_GIT_BIN ]]; then
-		# check we are in git repo
-		local CUR_DIR=$PWD
-		while [[ ! -d "${CUR_DIR}/.git" ]] && [[ ! "${CUR_DIR}" == "/" ]] && [[ ! "${CUR_DIR}" == "~" ]] && [[ ! "${CUR_DIR}" == "" ]]; do CUR_DIR=${CUR_DIR%/*}; done
-		if [[ -d "${CUR_DIR}/.git" ]]; then
-			# 'git repo for dotfiles' fix: show git status only in home dir and other git repos
-			if [[ "${CUR_DIR}" != "${HOME}" ]] || [[ "${PWD}" == "${HOME}" ]]; then
-				# get git branch
-				GIT_BRANCH=$($PS1_GIT_BIN symbolic-ref HEAD 2>/dev/null)
-				if [[ ! -z $GIT_BRANCH ]]; then
-					GIT_BRANCH=${GIT_BRANCH#refs/heads/}
-
-					# get git status
-					local GIT_STATUS=$($PS1_GIT_BIN status --porcelain 2>/dev/null)
-					[[ -n $GIT_STATUS ]] && GIT_DIRTY=1
-				fi
-			fi
-		fi
-	fi
-
-	# build b/w prompt for git and virtual env
-	[[ ! -z $GIT_BRANCH ]] && PS1_GIT=" (git: ${GIT_BRANCH})"
-	[[ ! -z $VIRTUAL_ENV ]] && PS1_VENV=" (venv: ${VIRTUAL_ENV#$WORKON_HOME})"
-
-	# calculate prompt length
-	local PS1_length=$((${#USER}+${#HOSTNAME}+${#PWDNAME}+${#PS1_GIT}+${#PS1_VENV}+3))
-	local FILL=
-
-	# if length is greater, than terminal width
-	if [[ $PS1_length -gt $COLUMNS ]]; then
-		# strip working directory name
-		PWDNAME="...${PWDNAME:$(($PS1_length-$COLUMNS+3))}"
-	else
-		# else calculate fillsize
-		local fillsize=$(($COLUMNS-$PS1_length))
-		FILL=$color_gray
-		while [[ $fillsize -gt 0 ]]; do FILL="${FILL}─"; fillsize=$(($fillsize-1)); done
-		FILL="${FILL}${color_off}"
-	fi
-
-	if $color_is_on; then
-		# build git status for prompt
-		if [[ ! -z $GIT_BRANCH ]]; then
-			if [[ -z $GIT_DIRTY ]]; then
-				PS1_GIT=" (git: ${color_green}${GIT_BRANCH}${color_off})"
-			else
-				PS1_GIT=" (git: ${color_red}${GIT_BRANCH}${color_off})"
-			fi
-		fi
-
-		# build python venv status for prompt
-		[[ ! -z $VIRTUAL_ENV ]] && PS1_VENV=" (venv: ${color_blue}${VIRTUAL_ENV#$WORKON_HOME}${color_off})"
-	fi
-
-	# set new color prompt
-	PS1="${color_user}${USER}${color_off}@${color_yellow}${HOSTNAME}${color_off}:${color_white}${PWDNAME}${color_off}${PS1_GIT}${PS1_VENV} ${FILL}\n➜ "
-
-	# get cursor position and add new line if we're not in first column
-	# cool'n'dirty trick (http://stackoverflow.com/a/2575525/1164595)
-	# XXX FIXME: this hack broke ssh =(
-#	exec < /dev/tty
-#	local OLDSTTY=$(stty -g)
-#	stty raw -echo min 0
-#	echo -en "\033[6n" > /dev/tty && read -sdR CURPOS
-#	stty $OLDSTTY
-	echo -en "\033[6n" && read -sdR CURPOS
-	[[ ${CURPOS##*;} -gt 1 ]] && echo "${color_error}↵${color_error_off}"
-
-	# set title
-	echo -ne "\033]0;${USER}@${HOSTNAME}:${PWDNAME}"; echo -ne "\007"
-}
-
-# set prompt command (title update and color prompt)
-PROMPT_COMMAND=prompt_command
-# set new b/w prompt (will be overwritten in 'prompt_command' later for color prompt)
-PS1='\u@\h:\w\$ '
-
-# python virtualenv
-if [ -f /usr/local/bin/virtualenvwrapper.sh ]; then
-	export PROJECT_HOME=~/work/
-	export WORKON_HOME=~/work/.venv/
-	export VIRTUAL_ENV_DISABLE_PROMPT=1
-	source /usr/local/bin/virtualenvwrapper.sh
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
 fi
 
-# grep colorize
-export GREP_OPTIONS="--color=auto"
+# colored GCC warnings and errors
+#export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
 
-# bash completion
-#if [ -f `brew --prefix`/etc/bash_completion ]; then
-#	. `brew --prefix`/etc/bash_completion
-#fi
+# Add an "alert" alias for long running commands.  Use like so:
+#   sleep 10; alert
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
 
-# bash aliases
-if [ -f ~/.bash_aliases ]; then
-	. ~/.bash_aliases
+# Alias definitions.
+# You may want to put all your additions into a separate file like
+# ~/.bash_aliases, instead of adding them here directly.
+# See /usr/share/doc/bash-doc/examples in the bash-doc package.
+
+if [ -f ~/.aliases ]; then
+	. ~/.aliases
 fi
 
+#inputrc
+if [ -f ~/.inputrc ]; then 
+	. ~/.inputrc
+fi
+
+# enable programmable completion features (you don't need to enable
+# this, if it's already enabled in /etc/bash.bashrc and /etc/profile
+# sources /etc/bash.bashrc).
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
 # this is for delete words by ^W
 tty -s && stty werase ^- 2>/dev/null
 
